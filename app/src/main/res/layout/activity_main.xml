@@ -7,6 +7,11 @@
     android:orientation="vertical"
     android:paddingTop="?attr/actionBarSize">
 
+    <androidx.appcompat.widget.Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/purple_500"/>
+
     <TextView
         android:id="@+id/selectedTime"
         android:layout_width="match_parent"
