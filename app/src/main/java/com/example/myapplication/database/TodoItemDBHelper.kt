@@ -18,7 +18,7 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
 
         private val SQL_CREATE_ENTRIES =
             "CREATE TABLE " + DBContract.TodoItemEntry.TABLE_NAME + " (" +
-                    DBContract.TodoItemEntry.COLUMN_ID + " TEXT PRIMARY KEY AUTOINCREMENT," +
+                    DBContract.TodoItemEntry.COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                     DBContract.TodoItemEntry.COLUMN_NOTE + " TEXT," +
                     DBContract.TodoItemEntry.COLUMN_TITLE + " TEXT," +
                     DBContract.TodoItemEntry.COLUMN_TIME + " TEXT," +
@@ -35,6 +35,10 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
         db?.execSQL(SQL_DELETE_ENTRIES)
         onCreate(db)
+    }
+    fun dropDB(){
+        val db = writableDatabase
+        db?.execSQL(SQL_DELETE_ENTRIES)
     }
 
     @Throws(SQLiteConstraintException::class)
@@ -67,7 +71,7 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
     }
 
     @SuppressLint("Range")
-    fun readUser(todoId: String): ArrayList<TodoItem> {
+    fun readItem(todoId: String): ArrayList<TodoItem> {
         val todoItems = ArrayList<TodoItem>()
         val db = writableDatabase
         var cursor: Cursor? = null
@@ -80,14 +84,14 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         }
 
         var title: String
-        var id: String
+        var id: Int
         var note: String
         var date: String
         var time: String
 
         if (cursor!!.moveToFirst()) {
             while (cursor.isAfterLast == false) {
-                id = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_ID))
+                id = cursor.getInt(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_ID))
                 title = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_TITLE))
                 note = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_NOTE))
                 date = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_DATE))
@@ -101,7 +105,7 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
     }
 
     @SuppressLint("Range")
-    fun readAllUsers(): ArrayList<TodoItem> {
+    fun readAllItems(): ArrayList<TodoItem> {
         val todoItems = ArrayList<TodoItem>()
         val db = writableDatabase
         var cursor: Cursor? = null
@@ -113,14 +117,14 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         }
 
         var title: String
-        var id: String
+        var id: Int
         var note: String
         var date: String
         var time: String
 
         if (cursor!!.moveToFirst()) {
             while (cursor.isAfterLast == false) {
-                id = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_ID))
+                id = cursor.getInt(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_ID))
                 title = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_TITLE))
                 note = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_NOTE))
                 date = cursor.getString(cursor.getColumnIndex(DBContract.TodoItemEntry.COLUMN_DATE))
