@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import com.example.myapplication.model.TodoItem
 
 class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -51,13 +52,21 @@ class TodoItemDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         values.put(DBContract.TodoItemEntry.COLUMN_DATE, todoItem.Date)
         values.put(DBContract.TodoItemEntry.COLUMN_TIME, todoItem.Time)
 
-        val newRowId = db.insert(DBContract.TodoItemEntry.TABLE_NAME, null, values)
+
+        if(todoItem.Id !=null){
+            Log.i("CCCCCCCCC update id",todoItem.Id.toString())
+            db.update(DBContract.TodoItemEntry.TABLE_NAME,values
+                ,DBContract.TodoItemEntry.COLUMN_ID+"=?", arrayOf(todoItem.Id.toString()))
+        }else{
+            val newRowId = db.insert(DBContract.TodoItemEntry.TABLE_NAME, null, values)
+        }
+
 
         return true
     }
 
     @Throws(SQLiteConstraintException::class)
-    fun deleteUser(userid: String): Boolean {
+    fun deleteItem(userid: String): Boolean {
         // Gets the data repository in write mode
         val db = writableDatabase
         // Define 'where' part of query.

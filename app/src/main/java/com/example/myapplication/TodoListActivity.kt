@@ -77,6 +77,5 @@ class TodoListActivity : AppCompatActivity() {
             }
         }
         return false
-
     }
 }

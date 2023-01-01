@@ -1,15 +1,14 @@
 package com.example.myapplication
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import com.example.myapplication.database.TodoItemDBHelper
 import com.example.myapplication.model.TodoItem
@@ -25,12 +24,20 @@ class TodoItemActivity : AppCompatActivity() {
     private lateinit var note_text: EditText
     lateinit var todoDBHelper: TodoItemDBHelper
     private lateinit var picker: MaterialTimePicker
+    private lateinit var datePicker:MaterialDatePicker<Long>
     private  lateinit var calendar: Calendar
     lateinit var dateView: TextView
     lateinit var timeView:TextView
     lateinit var toolbar: Toolbar
     lateinit var selectTimeBtn: Button
     lateinit var selectDateBtn:Button
+    lateinit var deleteBtn:ImageButton
+    lateinit var alarmManager:AlarmManager
+    lateinit var selectedDate : Date
+    lateinit var item: TodoItem
+    var hasPickedTime = false
+    var hasPickedDate = false
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,12 +58,22 @@ class TodoItemActivity : AppCompatActivity() {
         timeView = findViewById(R.id.time_view) as TextView
         selectDateBtn = findViewById(R.id.selectDate) as Button
         selectTimeBtn = findViewById(R.id.selectTime) as Button
+        deleteBtn = findViewById(R.id.delete_btn) as ImageButton
+
+        //initialize date pickers
+        picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_12H)
+            .setHour(12)
+            .setMinute(0)
+            .setTitleText("Select Due Date")
+            .build()
+        datePicker = MaterialDatePicker.Builder.datePicker().build()
+
 
         //listener
         save_btn.setOnClickListener{
-            var item = TodoItem(null, title_text.text.toString(),
-                note_text.text.toString(), dateView.text.toString(),timeView.text.toString() )
-            saveItem(item)
+
+            saveItem()
         }
 
         //fill items with data from previous activity if there is any
@@ -69,7 +86,42 @@ class TodoItemActivity : AppCompatActivity() {
         selectTimeBtn.setOnClickListener {
            showTimePicker()
         }
+        deleteBtn.setOnClickListener {
+            deleteItem()
+        }
 
+    }
+
+    private fun deleteItem(){
+        val intent = intent
+        val id = intent.getStringExtra("item_id")
+
+        if (id !="0" && id!=null){
+            val todoDBHelper = TodoItemDBHelper(this)
+            if(todoDBHelper.deleteItem(id) ){
+                Toast.makeText(this, "Item Deleted", Toast.LENGTH_SHORT).show()
+                finish()
+            }else{
+                Toast.makeText(this, "An error occured", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    // take in date data and set an alarm on the android OS schedule manager
+    private fun setAlarm(){
+        calendar = Calendar.getInstance()
+        calendar[Calendar.HOUR_OF_DAY]= picker.hour
+        calendar[Calendar.MINUTE] = picker.minute
+        calendar[Calendar.DAY_OF_MONTH] = selectedDate.day
+        calendar[Calendar.MONTH]= selectedDate.month
+        calendar[Calendar.YEAR]= selectedDate.year
+
+        alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, AlarmReciever::class.java )
+        val pendingIntent = PendingIntent.getBroadcast(this, 0 ,intent, 0)
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, AlarmManager.INTERVAL_DAY, pendingIntent)
+        Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -83,31 +135,29 @@ class TodoItemActivity : AppCompatActivity() {
 
         if (id !="0" && id!=null){
             val todoDBHelper = TodoItemDBHelper(this)
-            val item = todoDBHelper.readItem(id!!)[0]
+            item = todoDBHelper.readItem(id!!)[0]
             title_text.text.append(item.Title)
             note_text.text.append(item.Note)
             timeView.text = item.Time
             dateView.text = item.Date
+
         }
 
     }
 
     private fun showDatePicker(){
-        val datePicker = MaterialDatePicker.Builder.datePicker().build()
+
         datePicker.show(supportFragmentManager, "DatePicker")
         datePicker.addOnPositiveButtonClickListener {
             val dateFOrmatter = SimpleDateFormat("dd-MM-yy")
+            selectedDate = Date(it)
             val date = dateFOrmatter.format(Date(it))
             dateView.text = date
+            hasPickedDate = true
         }
     }
     private fun showTimePicker(){
-        picker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_12H)
-            .setHour(12)
-            .setMinute(0)
-            .setTitleText("Select Due Date")
-            .build()
+
         picker.show(supportFragmentManager, "AlarmNotify")
 
         picker.addOnPositiveButtonClickListener{
@@ -122,20 +172,40 @@ class TodoItemActivity : AppCompatActivity() {
             calendar[Calendar.MINUTE] = picker.minute
             calendar[Calendar.SECOND] = 0
             calendar[Calendar.MILLISECOND]= 0
+
+            hasPickedTime = true
         }
     }
 
 
 
-    public fun saveItem(item:TodoItem){
-        todoDBHelper = TodoItemDBHelper(this)
-        var created = todoDBHelper.insertTododItem(item)
-        if (created){
+    public fun saveItem(){
+        if (item.Id == null){
+            // create new item on db if there is non existing in this activity
+            item = TodoItem(null, title_text.text.toString(),
+                note_text.text.toString(), dateView.text.toString(),timeView.text.toString() )
+            todoDBHelper = TodoItemDBHelper(this)
+            todoDBHelper.insertTododItem(item)
             Toast.makeText(applicationContext, "Item Created", Toast.LENGTH_SHORT).show()
-            finish()
-        }else{
-            Toast.makeText(applicationContext, "An error occured", Toast.LENGTH_SHORT).show()
+
         }
+
+        //updated item data
+        var newItem = TodoItem(item.Id, title_text.text.toString(),
+            note_text.text.toString(), dateView.text.toString(),timeView.text.toString() )
+
+        todoDBHelper = TodoItemDBHelper(this)
+        todoDBHelper.insertTododItem(newItem)
+        Toast.makeText(applicationContext, "Item Created", Toast.LENGTH_SHORT).show()
+
+
+
+        // set alarm after saving data. set alarm if date is selected
+        if(hasPickedDate && hasPickedTime){
+            setAlarm()
+        }
+
+        finish()
     }
 
 
