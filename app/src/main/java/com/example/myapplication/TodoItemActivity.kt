@@ -34,7 +34,7 @@ class TodoItemActivity : AppCompatActivity() {
     lateinit var deleteBtn:ImageButton
     lateinit var alarmManager:AlarmManager
     lateinit var selectedDate : Date
-    lateinit var item: TodoItem
+    var item = TodoItem(null,"","","","")
     var hasPickedTime = false
     var hasPickedDate = false
 
@@ -188,15 +188,17 @@ class TodoItemActivity : AppCompatActivity() {
             todoDBHelper.insertTododItem(item)
             Toast.makeText(applicationContext, "Item Created", Toast.LENGTH_SHORT).show()
 
+        }else{
+            //updated item data
+            var newItem = TodoItem(item.Id, title_text.text.toString(),
+                note_text.text.toString(), dateView.text.toString(),timeView.text.toString() )
+
+            todoDBHelper = TodoItemDBHelper(this)
+            todoDBHelper.insertTododItem(newItem)
+            Toast.makeText(applicationContext, "Item Updated", Toast.LENGTH_SHORT).show()
         }
 
-        //updated item data
-        var newItem = TodoItem(item.Id, title_text.text.toString(),
-            note_text.text.toString(), dateView.text.toString(),timeView.text.toString() )
 
-        todoDBHelper = TodoItemDBHelper(this)
-        todoDBHelper.insertTododItem(newItem)
-        Toast.makeText(applicationContext, "Item Created", Toast.LENGTH_SHORT).show()
 
 
 
