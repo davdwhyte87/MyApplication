@@ -2,6 +2,7 @@
 I built this app to help me organize my day. I use it on a day to day basis to plan out my day. 
 This is not just a personal project. This app helps me and many of my friends at home. 
 
+You can download the apk (app-debug.apk) This app will be available on playstore soon
 
 Features:
 - View a todo list 
